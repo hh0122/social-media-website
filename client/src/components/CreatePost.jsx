@@ -7,8 +7,9 @@ const CreatePost = ({ onCreate }) => {
 
   const handleSubmit = (event) => {
     event.preventDefault();
-    if (!content.trim()) return;
-    onCreate({ content: content.trim(), photo });
+    const trimmedContent = content.trim();
+    if (!trimmedContent && !photo) return;
+    onCreate({ content: trimmedContent, photo });
     setContent("");
     setPhoto(null);
     setPhotoName("");
