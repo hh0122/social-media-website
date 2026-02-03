@@ -1,14 +1,15 @@
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useParams } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { travelProfiles } from "../data/travelData";
 import PostCard from "../components/PostCard";
-import { loadStoredPosts, normalizePost } from "../utils/postStorage";
+import { loadStoredPosts, normalizePost, saveStoredPosts } from "../utils/postStorage";
 import { getAllUsers } from "../utils/userStorage";
 
 const Profile = () => {
   const { user } = useAuth();
   const { handle } = useParams();
+  const [allPosts, setAllPosts] = useState(() => loadStoredPosts() ?? []);
 
   const allUsers = useMemo(() => getAllUsers(travelProfiles, user), [user]);
 
@@ -21,11 +22,21 @@ const Profile = () => {
     return user;
   }, [allUsers, handle, user]);
 
+  useEffect(() => {
+    saveStoredPosts(allPosts);
+  }, [allPosts]);
+
   const posts = useMemo(() => {
-    const stored = loadStoredPosts();
-    if (!stored || !profile) return [];
-    return stored.map(normalizePost).filter((post) => post.author.id === profile.id);
-  }, [profile]);
+    if (!profile) return [];
+    return allPosts.map(normalizePost).filter((post) => post.author.id === profile.id);
+  }, [allPosts, profile]);
+
+  const handleDeletePost = (postId) => {
+    if (!user) return;
+    setAllPosts((prev) =>
+      prev.filter((post) => !(post.id === postId && post.author.id === user.id))
+    );
+  };
 
   if (!profile) {
     return (
@@ -76,7 +87,12 @@ const Profile = () => {
       <div className="grid gap-6">
         {posts.length > 0 ? (
           posts.map((post) => (
-            <PostCard key={post.id} post={post} currentUser={user} />
+            <PostCard
+              key={post.id}
+              post={post}
+              currentUser={user}
+              onDelete={handleDeletePost}
+            />
           ))
         ) : (
           <div className="glass-card p-6 text-center text-sm text-slate-400">

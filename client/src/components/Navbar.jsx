@@ -1,6 +1,7 @@
 import { Link, NavLink } from "react-router-dom";
 import { useMemo, useState } from "react";
 import { useAuth } from "../context/AuthContext";
+import { useTheme } from "../context/ThemeContext";
 import { travelProfiles } from "../data/travelData";
 import { getAllUsers } from "../utils/userStorage";
 
@@ -11,6 +12,7 @@ const linkClass = ({ isActive }) =>
 
 const Navbar = () => {
   const { user, logout } = useAuth();
+  const { theme, toggleTheme } = useTheme();
   const [query, setQuery] = useState("");
 
   const allUsers = useMemo(() => getAllUsers(travelProfiles, user), [user]);
@@ -79,6 +81,9 @@ const Navbar = () => {
           <NavLink to="/" className={linkClass}>
             Home
           </NavLink>
+          <NavLink to="/trending" className={linkClass}>
+            Trending
+          </NavLink>
           <NavLink to="/profile" className={linkClass}>
             Profile
           </NavLink>
@@ -99,6 +104,13 @@ const Navbar = () => {
               Log in
             </NavLink>
           )}
+          <button
+            type="button"
+            onClick={toggleTheme}
+            className="rounded-full border border-slate-700 px-4 py-2 text-sm font-semibold text-slate-200 transition hover:border-slate-500"
+          >
+            {theme === "light" ? "Night mode" : "Light mode"}
+          </button>
         </div>
       </nav>
     </header>

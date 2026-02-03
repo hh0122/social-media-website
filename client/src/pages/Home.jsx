@@ -238,6 +238,13 @@ const Home = () => {
     );
   };
 
+  const handleDeletePost = (postId) => {
+    if (!user) return;
+    setPosts((prev) =>
+      prev.filter((post) => !(post.id === postId && post.author.id === user.id))
+    );
+  };
+
   return (
     <section className="flex flex-col gap-8">
       <div className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
@@ -290,6 +297,7 @@ const Home = () => {
             onCommentLike={handleToggleCommentLike}
             onReply={handleAddReply}
             onRepost={handleRepost}
+            onDelete={handleDeletePost}
           />
         ))}
       </div>

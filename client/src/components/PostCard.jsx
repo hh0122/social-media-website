@@ -8,7 +8,8 @@ const PostCard = ({
   onComment,
   onCommentLike,
   onReply,
-  onRepost
+  onRepost,
+  onDelete
 }) => {
   const [isCommenting, setIsCommenting] = useState(false);
   const [commentText, setCommentText] = useState("");
@@ -19,6 +20,7 @@ const PostCard = ({
   const allowComment = Boolean(onComment);
   const allowLike = Boolean(onLike);
   const allowRepost = Boolean(onRepost);
+  const allowDelete = Boolean(onDelete && currentUser?.id === post.author.id);
 
   const handleSubmitComment = (event) => {
     event.preventDefault();
@@ -38,18 +40,29 @@ const PostCard = ({
 
   return (
     <article className="glass-card flex flex-col gap-4 p-6">
-      <div className="flex items-center gap-4">
-        <img
-          src={post.author.avatar}
-          alt={post.author.name}
-          className="h-12 w-12 rounded-full border border-slate-700 object-cover"
-        />
-        <div>
-          <p className="text-sm font-semibold text-white">{post.author.name}</p>
-          <p className="text-xs text-slate-400">
-            {post.author.handle} · {formatDate(post.createdAt)}
-          </p>
+      <div className="flex flex-wrap items-center justify-between gap-4">
+        <div className="flex items-center gap-4">
+          <img
+            src={post.author.avatar}
+            alt={post.author.name}
+            className="h-12 w-12 rounded-full border border-slate-700 object-cover"
+          />
+          <div>
+            <p className="text-sm font-semibold text-white">{post.author.name}</p>
+            <p className="text-xs text-slate-400">
+              {post.author.handle} · {formatDate(post.createdAt)}
+            </p>
+          </div>
         </div>
+        {allowDelete && (
+          <button
+            type="button"
+            onClick={() => onDelete?.(post.id)}
+            className="rounded-full border border-rose-500/40 px-3 py-1 text-xs font-semibold text-rose-200 transition hover:border-rose-400 hover:text-white"
+          >
+            Delete
+          </button>
+        )}
       </div>
       {post.photo && (
         <div className="overflow-hidden rounded-2xl border border-slate-800">
