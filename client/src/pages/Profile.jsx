@@ -4,19 +4,22 @@ import { useAuth } from "../context/AuthContext";
 import { travelProfiles } from "../data/travelData";
 import PostCard from "../components/PostCard";
 import { loadStoredPosts, normalizePost } from "../utils/postStorage";
+import { getAllUsers } from "../utils/userStorage";
 
 const Profile = () => {
   const { user } = useAuth();
   const { handle } = useParams();
 
+  const allUsers = useMemo(() => getAllUsers(travelProfiles, user), [user]);
+
   const profile = useMemo(() => {
     if (handle) {
-      return travelProfiles.find(
+      return allUsers.find(
         (traveler) => traveler.handle.toLowerCase() === `@${handle}`.toLowerCase()
       );
     }
     return user;
-  }, [handle, user]);
+  }, [allUsers, handle, user]);
 
   const posts = useMemo(() => {
     const stored = loadStoredPosts();
@@ -60,8 +63,8 @@ const Profile = () => {
         <div className="mt-4 grid gap-4 sm:grid-cols-3">
           {[
             { label: "Posts", value: posts.length },
-            { label: "Followers", value: 1280 },
-            { label: "Following", value: 342 }
+            { label: "Followers", value: profile.followers ?? 0 },
+            { label: "Following", value: profile.following ?? 0 }
           ].map((stat) => (
             <div key={stat.label} className="rounded-2xl border border-slate-800 p-4">
               <p className="text-xs uppercase text-slate-500">{stat.label}</p>

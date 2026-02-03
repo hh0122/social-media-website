@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import { createId } from "../utils/postStorage";
+import { storeUser } from "../utils/userStorage";
 
 const Register = () => {
   const navigate = useNavigate();
@@ -10,12 +12,16 @@ const Register = () => {
 
   const handleSubmit = (event) => {
     event.preventDefault();
-    login({
-      id: "u3",
+    const newUser = {
+      id: createId(),
       name: name || "New Creator",
       handle: handle || "@newcreator",
-      avatar: "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=facearea&w=200&h=200"
-    });
+      avatar: "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=facearea&w=200&h=200",
+      followers: 0,
+      following: 0
+    };
+    storeUser(newUser);
+    login(newUser);
     navigate("/profile");
   };
 
