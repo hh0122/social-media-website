@@ -18,14 +18,20 @@ const Profile = () => {
     setUserDirectory(getAllUsers(travelProfiles, user));
   }, [user]);
 
+  const normalizedHandle = useMemo(
+    () => (handle ? handle.replace(/^@/, "").toLowerCase() : ""),
+    [handle]
+  );
+
   const profile = useMemo(() => {
-    if (handle) {
+    if (normalizedHandle) {
       return userDirectory.find(
-        (traveler) => traveler.handle.toLowerCase() === `@${handle}`.toLowerCase()
+        (traveler) =>
+          traveler.handle.replace(/^@/, "").toLowerCase() === normalizedHandle
       );
     }
     return user;
-  }, [handle, user, userDirectory]);
+  }, [normalizedHandle, user, userDirectory]);
 
   const isOwnProfile = Boolean(user && profile && user.id === profile.id);
   const isFollowing = useMemo(() => {
@@ -73,6 +79,18 @@ const Profile = () => {
     updateStoredUser(updatedUser);
     updateUser(updatedUser);
     refreshDirectory(updatedUser);
+  };
+
+  const handleAvatarUpload = (event) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      if (typeof reader.result === "string") {
+        setAvatarUrl(reader.result);
+      }
+    };
+    reader.readAsDataURL(file);
   };
 
   const handleToggleFollow = () => {
@@ -167,6 +185,18 @@ const Profile = () => {
                 className="mt-2 w-full rounded-2xl border border-slate-700 bg-slate-950/40 px-4 py-3 text-sm text-slate-100"
                 placeholder="https://..."
               />
+              <div className="mt-3 flex flex-wrap items-center gap-3 text-xs text-slate-400">
+                <label className="rounded-full border border-slate-700 px-4 py-2 font-semibold text-slate-200 transition hover:border-slate-500">
+                  Upload photo
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleAvatarUpload}
+                    className="hidden"
+                  />
+                </label>
+                <span>Choose a photo from your library to set as your avatar.</span>
+              </div>
             </div>
             <div>
               <label className="text-xs font-semibold uppercase text-slate-500">
