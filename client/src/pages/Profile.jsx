@@ -4,23 +4,49 @@ import { useAuth } from "../context/AuthContext";
 import { travelProfiles } from "../data/travelData";
 import PostCard from "../components/PostCard";
 import { loadStoredPosts, normalizePost, saveStoredPosts } from "../utils/postStorage";
-import { getAllUsers } from "../utils/userStorage";
+import { getAllUsers, updateStoredUser } from "../utils/userStorage";
 
 const Profile = () => {
-  const { user } = useAuth();
+  const { user, updateUser } = useAuth();
   const { handle } = useParams();
   const [allPosts, setAllPosts] = useState(() => loadStoredPosts() ?? []);
+  const [userDirectory, setUserDirectory] = useState(() =>
+    getAllUsers(travelProfiles, user)
+  );
 
-  const allUsers = useMemo(() => getAllUsers(travelProfiles, user), [user]);
+  useEffect(() => {
+    setUserDirectory(getAllUsers(travelProfiles, user));
+  }, [user]);
+
+  const normalizedHandle = useMemo(
+    () => (handle ? handle.replace(/^@/, "").toLowerCase() : ""),
+    [handle]
+  );
 
   const profile = useMemo(() => {
-    if (handle) {
-      return allUsers.find(
-        (traveler) => traveler.handle.toLowerCase() === `@${handle}`.toLowerCase()
+    if (normalizedHandle) {
+      return userDirectory.find(
+        (traveler) =>
+          traveler.handle.replace(/^@/, "").toLowerCase() === normalizedHandle
       );
     }
     return user;
-  }, [allUsers, handle, user]);
+  }, [normalizedHandle, user, userDirectory]);
+
+  const isOwnProfile = Boolean(user && profile && user.id === profile.id);
+  const isFollowing = useMemo(() => {
+    if (!user || !profile || isOwnProfile) return false;
+    return (user.followingList ?? []).includes(profile.handle);
+  }, [isOwnProfile, profile, user]);
+
+  const [avatarUrl, setAvatarUrl] = useState("");
+  const [bio, setBio] = useState("");
+
+  useEffect(() => {
+    if (!profile) return;
+    setAvatarUrl(profile.avatar ?? "");
+    setBio(profile.bio ?? "");
+  }, [profile]);
 
   useEffect(() => {
     saveStoredPosts(allPosts);
@@ -37,6 +63,63 @@ const Profile = () => {
       prev.filter((post) => !(post.id === postId && post.author.id === user.id))
     );
   };
+
+  const refreshDirectory = (currentUser) => {
+    setUserDirectory(getAllUsers(travelProfiles, currentUser ?? user));
+  };
+
+  const handleProfileSave = (event) => {
+    event.preventDefault();
+    if (!isOwnProfile || !user) return;
+    const updatedUser = {
+      ...user,
+      avatar: avatarUrl.trim() || user.avatar,
+      bio: bio.trim()
+    };
+    updateStoredUser(updatedUser);
+    updateUser(updatedUser);
+    refreshDirectory(updatedUser);
+  };
+
+  const handleAvatarUpload = (event) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      if (typeof reader.result === "string") {
+        setAvatarUrl(reader.result);
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleToggleFollow = () => {
+    if (!user || !profile || isOwnProfile) return;
+    const currentFollowing = user.followingList ?? [];
+    const nextFollowing = isFollowing
+      ? currentFollowing.filter((entry) => entry !== profile.handle)
+      : [...currentFollowing, profile.handle];
+    const updatedUser = {
+      ...user,
+      followingList: nextFollowing,
+      following: nextFollowing.length
+    };
+    const updatedProfile = {
+      ...profile,
+      followers: Math.max(0, (profile.followers ?? 0) + (isFollowing ? -1 : 1))
+    };
+    updateStoredUser(updatedUser);
+    updateStoredUser(updatedProfile);
+    updateUser(updatedUser);
+    refreshDirectory(updatedUser);
+  };
+
+  const followedProfiles = useMemo(() => {
+    if (!isOwnProfile || !user) return [];
+    const followingHandles = user.followingList ?? [];
+    if (followingHandles.length === 0) return [];
+    return userDirectory.filter((entry) => followingHandles.includes(entry.handle));
+  }, [isOwnProfile, user, userDirectory]);
 
   if (!profile) {
     return (
@@ -67,8 +150,75 @@ const Profile = () => {
               {profile.bio ?? "Travel storyteller sharing weekly inspiration on Pulse."}
             </p>
           </div>
+          {!isOwnProfile && user ? (
+            <div className="sm:ml-auto">
+              <button
+                type="button"
+                onClick={handleToggleFollow}
+                className={`rounded-full px-5 py-2 text-xs font-semibold transition ${
+                  isFollowing
+                    ? "border border-slate-600 text-slate-200 hover:border-slate-400"
+                    : "bg-brand-600 text-white hover:bg-brand-500"
+                }`}
+              >
+                {isFollowing ? "Following" : "Follow"}
+              </button>
+            </div>
+          ) : null}
         </div>
       </div>
+      {isOwnProfile ? (
+        <div className="glass-card p-6">
+          <h2 className="text-lg font-semibold text-white">Edit profile</h2>
+          <p className="mt-1 text-sm text-slate-400">
+            Update your avatar and bio to personalize your space.
+          </p>
+          <form onSubmit={handleProfileSave} className="mt-4 space-y-4">
+            <div>
+              <label className="text-xs font-semibold uppercase text-slate-500">
+                Avatar URL
+              </label>
+              <input
+                type="url"
+                value={avatarUrl}
+                onChange={(event) => setAvatarUrl(event.target.value)}
+                className="mt-2 w-full rounded-2xl border border-slate-700 bg-slate-950/40 px-4 py-3 text-sm text-slate-100"
+                placeholder="https://..."
+              />
+              <div className="mt-3 flex flex-wrap items-center gap-3 text-xs text-slate-400">
+                <label className="rounded-full border border-slate-700 px-4 py-2 font-semibold text-slate-200 transition hover:border-slate-500">
+                  Upload photo
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleAvatarUpload}
+                    className="hidden"
+                  />
+                </label>
+                <span>Choose a photo from your library to set as your avatar.</span>
+              </div>
+            </div>
+            <div>
+              <label className="text-xs font-semibold uppercase text-slate-500">
+                Bio
+              </label>
+              <textarea
+                value={bio}
+                onChange={(event) => setBio(event.target.value)}
+                rows={3}
+                className="mt-2 w-full rounded-2xl border border-slate-700 bg-slate-950/40 px-4 py-3 text-sm text-slate-100"
+                placeholder="Tell the community about your travel vibe."
+              />
+            </div>
+            <button
+              type="submit"
+              className="rounded-full bg-brand-600 px-5 py-2 text-xs font-semibold text-white transition hover:bg-brand-500"
+            >
+              Save changes
+            </button>
+          </form>
+        </div>
+      ) : null}
       <div className="glass-card p-6">
         <h2 className="text-lg font-semibold text-white">Activity snapshot</h2>
         <div className="mt-4 grid gap-4 sm:grid-cols-3">
@@ -101,6 +251,38 @@ const Profile = () => {
           </div>
         )}
       </div>
+      {isOwnProfile ? (
+        <div className="glass-card p-6">
+          <h2 className="text-lg font-semibold text-white">Following</h2>
+          <p className="mt-1 text-sm text-slate-400">
+            You are currently following {followedProfiles.length} creators.
+          </p>
+          {followedProfiles.length > 0 ? (
+            <div className="mt-4 grid gap-3 sm:grid-cols-2">
+              {followedProfiles.map((followed) => (
+                <div
+                  key={followed.id ?? followed.handle}
+                  className="flex items-center gap-3 rounded-2xl border border-slate-800 p-3"
+                >
+                  <img
+                    src={followed.avatar}
+                    alt={followed.name}
+                    className="h-10 w-10 rounded-2xl border border-slate-700 object-cover"
+                  />
+                  <div>
+                    <p className="text-sm font-semibold text-white">{followed.name}</p>
+                    <p className="text-xs text-slate-500">{followed.handle}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="mt-4 rounded-2xl border border-dashed border-slate-800 p-4 text-sm text-slate-400">
+              Follow other travelers to keep their adventures close by.
+            </div>
+          )}
+        </div>
+      ) : null}
     </section>
   );
 };
