@@ -9,7 +9,10 @@ const PostCard = ({
   onCommentLike,
   onReply,
   onRepost,
-  onDelete
+  onDelete,
+  onSave,
+  onShare,
+  isSaved
 }) => {
   const [isCommenting, setIsCommenting] = useState(false);
   const [commentText, setCommentText] = useState("");
@@ -21,6 +24,8 @@ const PostCard = ({
   const allowLike = Boolean(onLike);
   const allowRepost = Boolean(onRepost);
   const allowDelete = Boolean(onDelete && currentUser?.id === post.author.id);
+  const allowSave = Boolean(onSave && currentUser);
+  const allowShare = Boolean(onShare);
 
   const handleSubmitComment = (event) => {
     event.preventDefault();
@@ -120,6 +125,26 @@ const PostCard = ({
           }`}
         >
           🔁 {post.reposts}
+        </button>
+        <button
+          type="button"
+          onClick={() => onSave?.(post.id)}
+          disabled={!allowSave}
+          className={`flex items-center gap-2 rounded-full border px-3 py-1 transition hover:border-brand-500 hover:text-white ${
+            isSaved ? "border-brand-500 text-white" : "border-slate-800"
+          } ${allowSave ? "" : "border-slate-900 opacity-60"}`}
+        >
+          📌 {isSaved ? "Saved" : "Save"}
+        </button>
+        <button
+          type="button"
+          onClick={() => onShare?.(post)}
+          disabled={!allowShare}
+          className={`flex items-center gap-2 rounded-full border px-3 py-1 transition hover:border-brand-500 hover:text-white ${
+            allowShare ? "border-slate-800" : "border-slate-900 opacity-60"
+          }`}
+        >
+          ✈️ Share
         </button>
       </div>
       {allowComment && isCommenting && (

@@ -5,7 +5,8 @@ const normalizeUser = (user) => ({
   bio: user.bio ?? "",
   followers: Number.isInteger(user.followers) ? user.followers : 0,
   following: Number.isInteger(user.following) ? user.following : 0,
-  followingList: Array.isArray(user.followingList) ? user.followingList : []
+  followingList: Array.isArray(user.followingList) ? user.followingList : [],
+  savedPosts: Array.isArray(user.savedPosts) ? user.savedPosts : []
 });
 
 const getUserKey = (user) => user?.handle ?? user?.id ?? "";

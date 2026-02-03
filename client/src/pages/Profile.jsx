@@ -41,11 +41,15 @@ const Profile = () => {
 
   const [avatarUrl, setAvatarUrl] = useState("");
   const [bio, setBio] = useState("");
+  const [displayName, setDisplayName] = useState("");
+  const [handleValue, setHandleValue] = useState("");
 
   useEffect(() => {
     if (!profile) return;
     setAvatarUrl(profile.avatar ?? "");
     setBio(profile.bio ?? "");
+    setDisplayName(profile.name ?? "");
+    setHandleValue(profile.handle ?? "");
   }, [profile]);
 
   useEffect(() => {
@@ -64,6 +68,18 @@ const Profile = () => {
     );
   };
 
+  const handleToggleSave = (postId) => {
+    if (!user) return;
+    const savedPosts = user.savedPosts ?? [];
+    const updatedSaved = savedPosts.includes(postId)
+      ? savedPosts.filter((id) => id !== postId)
+      : [...savedPosts, postId];
+    const updatedUser = { ...user, savedPosts: updatedSaved };
+    updateStoredUser(updatedUser);
+    updateUser(updatedUser);
+    refreshDirectory(updatedUser);
+  };
+
   const refreshDirectory = (currentUser) => {
     setUserDirectory(getAllUsers(travelProfiles, currentUser ?? user));
   };
@@ -71,13 +87,37 @@ const Profile = () => {
   const handleProfileSave = (event) => {
     event.preventDefault();
     if (!isOwnProfile || !user) return;
+    const nextName = displayName.trim();
+    const rawHandle = handleValue.trim();
+    const formattedHandle = rawHandle
+      ? rawHandle.startsWith("@")
+        ? rawHandle
+        : `@${rawHandle}`
+      : user.handle;
     const updatedUser = {
       ...user,
+      name: nextName || user.name,
+      handle: formattedHandle,
       avatar: avatarUrl.trim() || user.avatar,
       bio: bio.trim()
     };
     updateStoredUser(updatedUser);
     updateUser(updatedUser);
+    setAllPosts((prev) =>
+      prev.map((post) =>
+        post.author.id === user.id
+          ? {
+              ...post,
+              author: {
+                ...post.author,
+                name: updatedUser.name,
+                handle: updatedUser.handle,
+                avatar: updatedUser.avatar
+              }
+            }
+          : post
+      )
+    );
     refreshDirectory(updatedUser);
   };
 
@@ -120,6 +160,13 @@ const Profile = () => {
     if (followingHandles.length === 0) return [];
     return userDirectory.filter((entry) => followingHandles.includes(entry.handle));
   }, [isOwnProfile, user, userDirectory]);
+
+  const savedPosts = useMemo(() => {
+    if (!isOwnProfile || !user) return [];
+    const savedIds = user.savedPosts ?? [];
+    if (savedIds.length === 0) return [];
+    return allPosts.map(normalizePost).filter((post) => savedIds.includes(post.id));
+  }, [allPosts, isOwnProfile, user]);
 
   if (!profile) {
     return (
@@ -174,6 +221,32 @@ const Profile = () => {
             Update your avatar and bio to personalize your space.
           </p>
           <form onSubmit={handleProfileSave} className="mt-4 space-y-4">
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div>
+                <label className="text-xs font-semibold uppercase text-slate-500">
+                  Display name
+                </label>
+                <input
+                  type="text"
+                  value={displayName}
+                  onChange={(event) => setDisplayName(event.target.value)}
+                  className="mt-2 w-full rounded-2xl border border-slate-700 bg-slate-950/40 px-4 py-3 text-sm text-slate-100"
+                  placeholder="Your name"
+                />
+              </div>
+              <div>
+                <label className="text-xs font-semibold uppercase text-slate-500">
+                  Handle
+                </label>
+                <input
+                  type="text"
+                  value={handleValue}
+                  onChange={(event) => setHandleValue(event.target.value)}
+                  className="mt-2 w-full rounded-2xl border border-slate-700 bg-slate-950/40 px-4 py-3 text-sm text-slate-100"
+                  placeholder="@yourhandle"
+                />
+              </div>
+            </div>
             <div>
               <label className="text-xs font-semibold uppercase text-slate-500">
                 Avatar URL
@@ -242,6 +315,8 @@ const Profile = () => {
               post={post}
               currentUser={user}
               onDelete={handleDeletePost}
+              onSave={handleToggleSave}
+              isSaved={Boolean(user?.savedPosts?.includes(post.id))}
             />
           ))
         ) : (
@@ -251,6 +326,40 @@ const Profile = () => {
           </div>
         )}
       </div>
+      {isOwnProfile ? (
+        <div className="glass-card p-6">
+          <h2 className="text-lg font-semibold text-white">Saved posts</h2>
+          <p className="mt-1 text-sm text-slate-400">
+            Keep your favorite highlights here for quick inspiration.
+          </p>
+          {savedPosts.length > 0 ? (
+            <div className="mt-4 grid gap-4 sm:grid-cols-2">
+              {savedPosts.map((post) => (
+                <div
+                  key={post.id}
+                  className="overflow-hidden rounded-2xl border border-slate-800"
+                >
+                  <img
+                    src={post.photo ?? post.destination?.photo}
+                    alt="Saved highlight"
+                    className="h-32 w-full object-cover"
+                  />
+                  <div className="p-3 text-sm text-slate-300">
+                    <p className="text-xs text-slate-500">{post.author.handle}</p>
+                    <p className="mt-1 truncate text-sm text-slate-100">
+                      {post.content}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="mt-4 rounded-2xl border border-dashed border-slate-800 p-4 text-sm text-slate-400">
+              Tap the save button on any post to build your inspiration board.
+            </div>
+          )}
+        </div>
+      ) : null}
       {isOwnProfile ? (
         <div className="glass-card p-6">
           <h2 className="text-lg font-semibold text-white">Following</h2>
