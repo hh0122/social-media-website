@@ -9,3 +9,84 @@ body {
 .glass-card {
   @apply bg-slate-900/70 border border-slate-800 rounded-2xl shadow-lg backdrop-blur;
 }
+
+body.theme-light {
+  background-color: #f8fafc;
+  color: #0f172a;
+}
+
+body.theme-light .glass-card {
+  @apply bg-white/80 border-slate-200;
+}
+
+body.theme-light header {
+  @apply bg-white/80 border-slate-200;
+}
+
+body.theme-light .text-white {
+  color: #0f172a;
+}
+
+body.theme-light .text-slate-200 {
+  color: #1e293b;
+}
+
+body.theme-light .text-slate-300 {
+  color: #334155;
+}
+
+body.theme-light .text-slate-400 {
+  color: #475569;
+}
+
+body.theme-light .text-slate-500 {
+  color: #64748b;
+}
+
+body.theme-light .border-slate-800 {
+  border-color: #e2e8f0;
+}
+
+body.theme-light .border-slate-700 {
+  border-color: #cbd5e1;
+}
+
+body.theme-light .border-slate-900 {
+  border-color: #e2e8f0;
+}
+
+body.theme-light .bg-slate-950\/95 {
+  background-color: rgba(255, 255, 255, 0.95);
+}
+
+body.theme-light .bg-slate-950\/70 {
+  background-color: rgba(255, 255, 255, 0.85);
+}
+
+body.theme-light .bg-slate-950\/60 {
+  background-color: rgba(255, 255, 255, 0.85);
+}
+
+body.theme-light .bg-slate-950\/40 {
+  background-color: rgba(255, 255, 255, 0.75);
+}
+
+body.theme-light .bg-slate-900\/70 {
+  background-color: rgba(255, 255, 255, 0.85);
+}
+
+body.theme-light .bg-slate-900 {
+  background-color: #f1f5f9;
+}
+
+body.theme-light input,
+body.theme-light textarea,
+body.theme-light select {
+  background-color: rgba(255, 255, 255, 0.9);
+  color: #0f172a;
+}
+
+body.theme-light input::placeholder,
+body.theme-light textarea::placeholder {
+  color: #94a3b8;
+}
