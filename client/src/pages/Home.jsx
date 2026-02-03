@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import CreatePost from "../components/CreatePost";
 import PostCard from "../components/PostCard";
+import StoriesBar from "../components/StoriesBar";
 import { useAuth } from "../context/AuthContext";
 import { travelDestinations, travelProfiles } from "../data/travelData";
 import {
@@ -9,6 +10,7 @@ import {
   normalizePost,
   saveStoredPosts
 } from "../utils/postStorage";
+import { updateStoredUser } from "../utils/userStorage";
 
 const demoPosts = [
   {
@@ -76,8 +78,9 @@ const demoPosts = [
 ];
 
 const Home = () => {
-  const { user } = useAuth();
+  const { user, updateUser } = useAuth();
   const [posts, setPosts] = useState(() => loadStoredPosts() ?? demoPosts.map(normalizePost));
+  const [shareNotice, setShareNotice] = useState("");
 
   const feedHeader = useMemo(
     () =>
@@ -90,6 +93,12 @@ const Home = () => {
   useEffect(() => {
     saveStoredPosts(posts);
   }, [posts]);
+
+  useEffect(() => {
+    if (!shareNotice) return;
+    const timeout = setTimeout(() => setShareNotice(""), 3000);
+    return () => clearTimeout(timeout);
+  }, [shareNotice]);
 
   const handleCreate = ({ content, photo }) => {
     if (!user) return;
@@ -238,6 +247,45 @@ const Home = () => {
     );
   };
 
+  const handleToggleSave = (postId) => {
+    if (!user) return;
+    const savedPosts = user.savedPosts ?? [];
+    const updatedSaved = savedPosts.includes(postId)
+      ? savedPosts.filter((id) => id !== postId)
+      : [...savedPosts, postId];
+    const updatedUser = { ...user, savedPosts: updatedSaved };
+    updateStoredUser(updatedUser);
+    updateUser(updatedUser);
+  };
+
+  const handleSharePost = async (post) => {
+    const shareText = `${post.author.name} on Pulse: ${post.content}`;
+    try {
+      if (navigator?.clipboard?.writeText) {
+        await navigator.clipboard.writeText(shareText);
+        setShareNotice("Link copied! Share it in your messages.");
+        return;
+      }
+    } catch (error) {
+      console.warn("Clipboard unavailable", error);
+    }
+    setShareNotice("Copy this highlight manually from the post.");
+  };
+
+  const storyItems = useMemo(() => {
+    return travelProfiles.map((profile, index) => {
+      const destination = travelDestinations[index % travelDestinations.length];
+      return {
+        id: `story-${profile.id}`,
+        name: profile.name,
+        handle: profile.handle,
+        avatar: profile.avatar,
+        storyPhoto: destination.photo,
+        caption: destination.vibe
+      };
+    });
+  }, []);
+
   const handleDeletePost = (postId) => {
     if (!user) return;
     setPosts((prev) =>
@@ -247,6 +295,12 @@ const Home = () => {
 
   return (
     <section className="flex flex-col gap-8">
+      {shareNotice ? (
+        <div className="rounded-2xl border border-brand-500/40 bg-brand-500/10 px-4 py-3 text-sm text-brand-100">
+          {shareNotice}
+        </div>
+      ) : null}
+      <StoriesBar currentUser={user} stories={storyItems} />
       <div className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
         <div className="glass-card p-6">
           <p className="text-sm text-brand-200">Travel feed</p>
@@ -282,6 +336,17 @@ const Home = () => {
                 </li>
               </ul>
             </div>
+            <div>
+              <p className="text-xs uppercase text-slate-500">Suggested for you</p>
+              <ul className="mt-2 space-y-2">
+                {travelProfiles.slice(0, 2).map((profile) => (
+                  <li key={profile.id} className="flex items-center justify-between">
+                    <span>{profile.name}</span>
+                    <span className="text-xs text-slate-400">{profile.handle}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
           </div>
         </div>
       </div>
@@ -298,6 +363,9 @@ const Home = () => {
             onReply={handleAddReply}
             onRepost={handleRepost}
             onDelete={handleDeletePost}
+            onSave={handleToggleSave}
+            onShare={handleSharePost}
+            isSaved={Boolean(user?.savedPosts?.includes(post.id))}
           />
         ))}
       </div>

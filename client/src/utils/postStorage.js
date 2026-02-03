@@ -17,11 +17,9 @@ const normalizeComment = (comment) => ({
 export const normalizePost = (post) => {
   const commentCount = Number.isInteger(post.commentCount)
     ? post.commentCount
-    : Number.isInteger(post.comments)
-      ? post.comments
-      : Array.isArray(post.comments)
-        ? post.comments.length
-        : 0;
+    : Array.isArray(post.comments)
+      ? post.comments.length
+      : 0;
 
   return {
     ...post,
