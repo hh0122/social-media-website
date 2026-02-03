@@ -22,13 +22,10 @@ app.use("/api/users", userRoutes);
 
 const port = process.env.PORT || 4000;
 
-connectDB()
-  .then(() => {
-    app.listen(port, () => {
-      console.log(`Server running on port ${port}`);
-    });
-  })
-  .catch((error) => {
-    console.error("Failed to connect to database", error);
-    process.exit(1);
-  });
+app.listen(port, () => {
+  console.log(`Server running on port ${port}`);
+});
+
+connectDB().catch((error) => {
+  console.error("Failed to connect to database", error);
+});
