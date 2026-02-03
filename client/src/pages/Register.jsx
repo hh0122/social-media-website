@@ -17,8 +17,10 @@ const Register = () => {
       name: name || "New Creator",
       handle: handle || "@newcreator",
       avatar: "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=facearea&w=200&h=200",
+      bio: "",
       followers: 0,
-      following: 0
+      following: 0,
+      followingList: []
     };
     storeUser(newUser);
     login(newUser);

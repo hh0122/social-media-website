@@ -2,8 +2,10 @@ const STORAGE_KEY = "pulse-users";
 
 const normalizeUser = (user) => ({
   ...user,
+  bio: user.bio ?? "",
   followers: Number.isInteger(user.followers) ? user.followers : 0,
-  following: Number.isInteger(user.following) ? user.following : 0
+  following: Number.isInteger(user.following) ? user.following : 0,
+  followingList: Array.isArray(user.followingList) ? user.followingList : []
 });
 
 const getUserKey = (user) => user?.handle ?? user?.id ?? "";
@@ -32,6 +34,11 @@ export const storeUser = (user) => {
   const stored = loadStoredUsers();
   const deduped = stored.filter((entry) => getUserKey(entry) !== getUserKey(normalized));
   saveStoredUsers([...deduped, normalized]);
+};
+
+export const updateStoredUser = (user) => {
+  storeUser(user);
+  return normalizeUser(user);
 };
 
 export const getAllUsers = (seedUsers = [], currentUser) => {
