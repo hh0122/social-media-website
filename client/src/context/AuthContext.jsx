@@ -1,13 +1,9 @@
 import { createContext, useContext, useMemo, useState } from "react";
+import { travelProfiles } from "../data/travelData";
 
 const AuthContext = createContext(null);
 
-const demoUser = {
-  id: "u1",
-  name: "Avery Blake",
-  handle: "@averyb",
-  avatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=facearea&w=200&h=200"
-};
+const demoUser = travelProfiles[0];
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(demoUser);
