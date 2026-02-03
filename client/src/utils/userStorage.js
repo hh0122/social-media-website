@@ -42,6 +42,14 @@ export const updateStoredUser = (user) => {
   return normalizeUser(user);
 };
 
+export const removeStoredUser = (user) => {
+  const key = getUserKey(user);
+  if (!key) return;
+  const stored = loadStoredUsers();
+  const filtered = stored.filter((entry) => getUserKey(entry) !== key);
+  saveStoredUsers(filtered);
+};
+
 export const getAllUsers = (seedUsers = [], currentUser) => {
   const stored = loadStoredUsers();
   const combined = [...seedUsers, ...stored, currentUser].filter(Boolean);

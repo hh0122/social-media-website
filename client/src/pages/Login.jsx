@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import api from "../api/axios";
 import { useAuth } from "../context/AuthContext";
 
 const Login = () => {
@@ -7,16 +8,27 @@ const Login = () => {
   const { login } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [errorMessage, setErrorMessage] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleSubmit = (event) => {
+  const handleSubmit = async (event) => {
     event.preventDefault();
-    login({
-      id: "u2",
-      name: "Taylor Reed",
-      handle: "@taylor",
-      avatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=facearea&w=200&h=200"
-    });
-    navigate("/profile");
+    setErrorMessage("");
+    setIsSubmitting(true);
+    try {
+      const response = await api.post("/auth/login", {
+        email,
+        password
+      });
+      login({ user: response.data.user, token: response.data.token });
+      navigate("/profile");
+    } catch (error) {
+      const message =
+        error?.response?.data?.message ?? "Unable to sign in with those details.";
+      setErrorMessage(message);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -27,6 +39,11 @@ const Login = () => {
           Sign in to keep the conversation flowing.
         </p>
         <form onSubmit={handleSubmit} className="mt-6 space-y-4">
+          {errorMessage ? (
+            <p className="rounded-2xl border border-rose-500/40 bg-rose-500/10 px-4 py-3 text-xs text-rose-100">
+              {errorMessage}
+            </p>
+          ) : null}
           <div>
             <label className="text-xs font-semibold uppercase text-slate-500">Email</label>
             <input
@@ -51,9 +68,10 @@ const Login = () => {
           </div>
           <button
             type="submit"
-            className="w-full rounded-full bg-brand-600 py-3 text-sm font-semibold text-white transition hover:bg-brand-500"
+            className="w-full rounded-full bg-brand-600 py-3 text-sm font-semibold text-white transition hover:bg-brand-500 disabled:cursor-not-allowed disabled:opacity-70"
+            disabled={isSubmitting}
           >
-            Log in
+            {isSubmitting ? "Signing in..." : "Log in"}
           </button>
         </form>
         <p className="mt-4 text-center text-xs text-slate-400">
