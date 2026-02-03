@@ -58,6 +58,14 @@ const Home = () => {
     setPosts((prev) => [newPost, ...prev]);
   };
 
+  const updatePostMetric = (postId, metric) => {
+    setPosts((prev) =>
+      prev.map((post) =>
+        post.id === postId ? { ...post, [metric]: post[metric] + 1 } : post
+      )
+    );
+  };
+
   return (
     <section className="flex flex-col gap-8">
       <div className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
@@ -101,7 +109,13 @@ const Home = () => {
       <CreatePost onCreate={handleCreate} />
       <div className="grid gap-6">
         {posts.map((post) => (
-          <PostCard key={post.id} post={post} />
+          <PostCard
+            key={post.id}
+            post={post}
+            onLike={(postId) => updatePostMetric(postId, "likes")}
+            onComment={(postId) => updatePostMetric(postId, "comments")}
+            onRepost={(postId) => updatePostMetric(postId, "reposts")}
+          />
         ))}
       </div>
     </section>

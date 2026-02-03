@@ -28,6 +28,11 @@ const Navbar = () => {
           <NavLink to="/profile" className={linkClass}>
             Profile
           </NavLink>
+          {!user && (
+            <NavLink to="/register" className={linkClass}>
+              Sign up
+            </NavLink>
+          )}
           {user ? (
             <button
               className="rounded-full border border-slate-700 px-4 py-2 text-sm font-semibold text-slate-200 transition hover:border-slate-500"
