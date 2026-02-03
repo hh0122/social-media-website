@@ -2,6 +2,7 @@ import { Link, NavLink } from "react-router-dom";
 import { useMemo, useState } from "react";
 import { useAuth } from "../context/AuthContext";
 import { travelProfiles } from "../data/travelData";
+import { getAllUsers } from "../utils/userStorage";
 
 const linkClass = ({ isActive }) =>
   `rounded-full px-4 py-2 text-sm font-semibold transition ${
@@ -12,18 +13,20 @@ const Navbar = () => {
   const { user, logout } = useAuth();
   const [query, setQuery] = useState("");
 
+  const allUsers = useMemo(() => getAllUsers(travelProfiles, user), [user]);
+
   const results = useMemo(() => {
     const term = query.trim().toLowerCase();
     if (!term) return [];
-    return travelProfiles.filter(
+    return allUsers.filter(
       (profile) =>
         profile.name.toLowerCase().includes(term) ||
         profile.handle.toLowerCase().includes(term)
     );
-  }, [query]);
+  }, [allUsers, query]);
 
   return (
-    <header className="border-b border-slate-800/80 bg-slate-950/70 backdrop-blur">
+    <header className="relative z-30 border-b border-slate-800/80 bg-slate-950/70 backdrop-blur">
       <nav className="mx-auto flex w-full max-w-6xl flex-wrap items-center justify-between gap-4 px-6 py-4">
         <Link to="/" className="flex items-center gap-3">
           <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-brand-600 text-lg font-bold text-white">
@@ -46,7 +49,7 @@ const Navbar = () => {
             className="w-full rounded-full border border-slate-800 bg-slate-950/60 px-4 py-2 text-sm text-slate-100 placeholder:text-slate-500 focus:border-brand-500 focus:outline-none sm:w-72"
           />
           {results.length > 0 && (
-            <div className="absolute left-0 right-0 top-12 z-10 rounded-2xl border border-slate-800 bg-slate-950/95 p-3 text-sm text-slate-200 shadow-lg sm:w-72">
+            <div className="absolute left-0 right-0 top-12 z-40 rounded-2xl border border-slate-800 bg-slate-950/95 p-3 text-sm text-slate-200 shadow-lg sm:w-72">
               <p className="text-xs uppercase text-slate-500">Profiles</p>
               <ul className="mt-2 space-y-2">
                 {results.map((profile) => (

@@ -55,27 +55,35 @@ export const travelProfiles = [
     name: "Avery Blake",
     handle: "@averyb",
     avatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=facearea&w=200&h=200",
-    bio: "Slow travel enthusiast, collecting café playlists and coastal walks."
+    bio: "Slow travel enthusiast, collecting café playlists and coastal walks.",
+    followers: 1204,
+    following: 318
   },
   {
     id: "u2",
     name: "Noah Kim",
     handle: "@noahk",
     avatar: "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=facearea&w=200&h=200",
-    bio: "Urban explorer sharing weekend city itineraries."
+    bio: "Urban explorer sharing weekend city itineraries.",
+    followers: 980,
+    following: 402
   },
   {
     id: "u3",
     name: "Isabella Cruz",
     handle: "@isacruz",
     avatar: "https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=facearea&w=200&h=200",
-    bio: "Adventure seeker chasing alpine trails and glacier lakes."
+    bio: "Adventure seeker chasing alpine trails and glacier lakes.",
+    followers: 1820,
+    following: 290
   },
   {
     id: "u4",
     name: "Ravi Patel",
     handle: "@ravipatel",
     avatar: "https://images.unsplash.com/photo-1544723795-3fb6469f5b39?auto=format&fit=facearea&w=200&h=200",
-    bio: "Food + travel storyteller with a love for night markets."
+    bio: "Food + travel storyteller with a love for night markets.",
+    followers: 1340,
+    following: 415
   }
 ];

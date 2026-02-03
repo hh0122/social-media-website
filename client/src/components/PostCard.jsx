@@ -51,6 +51,15 @@ const PostCard = ({
           </p>
         </div>
       </div>
+      {post.photo && (
+        <div className="overflow-hidden rounded-2xl border border-slate-800">
+          <img
+            src={post.photo}
+            alt="Uploaded travel highlight"
+            className="h-56 w-full object-cover sm:h-64"
+          />
+        </div>
+      )}
       {post.destination && (
         <div className="overflow-hidden rounded-2xl border border-slate-800">
           <img

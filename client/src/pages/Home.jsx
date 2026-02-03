@@ -91,7 +91,7 @@ const Home = () => {
     saveStoredPosts(posts);
   }, [posts]);
 
-  const handleCreate = (content) => {
+  const handleCreate = ({ content, photo }) => {
     if (!user) return;
     const destination =
       travelDestinations[Math.floor(Math.random() * travelDestinations.length)];
@@ -99,6 +99,7 @@ const Home = () => {
       id: createId(),
       author: user,
       content,
+      photo,
       createdAt: new Date().toISOString(),
       likes: 0,
       comments: [],
