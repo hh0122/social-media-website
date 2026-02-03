@@ -1,7 +1,9 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import CreatePost from "../components/CreatePost";
 import PostCard from "../components/PostCard";
 import { useAuth } from "../context/AuthContext";
+
+const STORAGE_KEY = "pulse-posts";
 
 const demoPosts = [
   {
@@ -32,9 +34,45 @@ const demoPosts = [
   }
 ];
 
+const createId = () =>
+  typeof crypto !== "undefined" && crypto.randomUUID
+    ? crypto.randomUUID()
+    : `id-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+
+const normalizePost = (post) => {
+  const commentCount = Number.isInteger(post.commentCount)
+    ? post.commentCount
+    : Number.isInteger(post.comments)
+      ? post.comments
+      : Array.isArray(post.comments)
+        ? post.comments.length
+        : 0;
+
+  return {
+    ...post,
+    likedBy: Array.isArray(post.likedBy) ? post.likedBy : [],
+    comments: Array.isArray(post.comments) ? post.comments : [],
+    commentCount
+  };
+};
+
+const loadStoredPosts = () => {
+  if (typeof window === "undefined") return null;
+  try {
+    const stored = window.localStorage.getItem(STORAGE_KEY);
+    if (!stored) return null;
+    const parsed = JSON.parse(stored);
+    if (!Array.isArray(parsed)) return null;
+    return parsed.map(normalizePost);
+  } catch (error) {
+    console.error("Failed to load stored posts", error);
+    return null;
+  }
+};
+
 const Home = () => {
   const { user } = useAuth();
-  const [posts, setPosts] = useState(demoPosts);
+  const [posts, setPosts] = useState(() => loadStoredPosts() ?? demoPosts.map(normalizePost));
 
   const feedHeader = useMemo(
     () =>
@@ -44,24 +82,74 @@ const Home = () => {
     [user]
   );
 
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(posts));
+  }, [posts]);
+
   const handleCreate = (content) => {
     if (!user) return;
     const newPost = {
-      id: `p${posts.length + 1}`,
+      id: createId(),
       author: user,
       content,
       createdAt: new Date().toISOString(),
       likes: 0,
-      comments: 0,
+      comments: [],
+      commentCount: 0,
+      likedBy: [],
       reposts: 0
     };
     setPosts((prev) => [newPost, ...prev]);
   };
 
-  const updatePostMetric = (postId, metric) => {
+  const handleToggleLike = (postId) => {
+    if (!user) return;
     setPosts((prev) =>
       prev.map((post) =>
-        post.id === postId ? { ...post, [metric]: post[metric] + 1 } : post
+        post.id === postId
+          ? (() => {
+              const alreadyLiked = post.likedBy.includes(user.id);
+              const likedBy = alreadyLiked
+                ? post.likedBy.filter((id) => id !== user.id)
+                : [...post.likedBy, user.id];
+              const likes = Math.max(0, post.likes + (alreadyLiked ? -1 : 1));
+              return { ...post, likedBy, likes };
+            })()
+          : post
+      )
+    );
+  };
+
+  const handleAddComment = (postId, message) => {
+    if (!user) return;
+    const content = message.trim();
+    if (!content) return;
+    setPosts((prev) =>
+      prev.map((post) =>
+        post.id === postId
+          ? {
+              ...post,
+              comments: [
+                {
+                  id: createId(),
+                  author: user,
+                  content,
+                  createdAt: new Date().toISOString()
+                },
+                ...post.comments
+              ],
+              commentCount: (post.commentCount ?? 0) + 1
+            }
+          : post
+      )
+    );
+  };
+
+  const handleRepost = (postId) => {
+    setPosts((prev) =>
+      prev.map((post) =>
+        post.id === postId ? { ...post, reposts: post.reposts + 1 } : post
       )
     );
   };
@@ -112,9 +200,10 @@ const Home = () => {
           <PostCard
             key={post.id}
             post={post}
-            onLike={(postId) => updatePostMetric(postId, "likes")}
-            onComment={(postId) => updatePostMetric(postId, "comments")}
-            onRepost={(postId) => updatePostMetric(postId, "reposts")}
+            currentUser={user}
+            onLike={handleToggleLike}
+            onComment={handleAddComment}
+            onRepost={handleRepost}
           />
         ))}
       </div>
