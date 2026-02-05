@@ -32,10 +32,10 @@ const Navbar = () => {
       <nav className="mx-auto flex w-full max-w-6xl flex-wrap items-center justify-between gap-4 px-6 py-4">
         <Link to="/" className="flex items-center gap-3">
           <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-brand-600 text-lg font-bold text-white">
-            P
+            HH
           </span>
           <div>
-            <p className="text-lg font-semibold text-white">Pulse</p>
+            <p className="text-lg font-semibold text-white">Travel</p>
             <p className="text-xs text-slate-400">Connect. Share. Thrive.</p>
           </div>
         </Link>
