@@ -29,7 +29,7 @@ Create a `.env` file in `server/` if you want to override environment variables.
 
 ## Quick start from repo root
 
-If you are in the repository root, you can now run:
+If you are in the repository root, run:
 
 ```bash
 npm run dev
@@ -39,13 +39,17 @@ npm run dev
 
 This starts the Vite client (`client/`) from the root folder.
 
-You can also run:
+To run the backend from root, use:
 
 ```bash
 npm run server
 ```
 
-to start the API server (`server/`).
+For a production-like server start from root, use:
+
+```bash
+npm run server:start
+```
 
 ## Notes
 
@@ -59,3 +63,19 @@ If you see an error like `ENOENT: no such file or directory, open ...\package.js
 - Run commands from the project root (this folder), or
 - Run `cd client` / `cd server` first, then run npm commands there.
 
+
+## Deploying frontend and backend separately
+
+You can host the frontend on **Netlify** and the backend on **Render**.
+
+- Netlify (frontend):
+  - Base directory: `client`
+  - Build command: `npm run build`
+  - Publish directory: `dist`
+  - Environment variable: `VITE_API_URL=https://<your-render-service>.onrender.com/api`
+
+- Render (backend):
+  - This repo includes `render.yaml` so Render can deploy the API from `server/`.
+  - Set backend environment variables in Render (for example: `MONGO_URI`, `JWT_SECRET`, and optional `CORS_ORIGIN`).
+
+After both are deployed, ensure the frontend points to the Render URL via `VITE_API_URL`.
