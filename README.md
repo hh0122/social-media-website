@@ -75,10 +75,17 @@ You can host the frontend on **Netlify** and the backend on **Render**.
   - Environment variable: `VITE_API_URL=https://<your-render-service>.onrender.com/api`
 
 - Render (backend):
-  - This repo includes `render.yaml` so Render can deploy the API from `server/`.
+  - Prefer **Blueprint deploy** so `render.yaml` is applied automatically.
+  - If you create a Web Service manually, set:
+    - Root directory: `server`
+    - Build command: `npm install`
+    - Start command: `npm start`
   - Set backend environment variables in Render (for example: `MONGO_URI`, `JWT_SECRET`, and optional `CORS_ORIGIN`).
 
 After both are deployed, ensure the frontend points to the Render URL via `VITE_API_URL`.
 
 
 If Render is using default commands (`yarn` + `yarn start`), this repo now works out of the box: install triggers backend dependency install via `postinstall`, and `start` launches the API server.
+
+
+If you still see `vite: Permission denied` on Render, the service is still starting the frontend script. Re-check that the service start command is backend-focused (`npm start` in `server/`, or root `yarn start` on this latest commit) and redeploy.

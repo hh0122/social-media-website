@@ -4,11 +4,13 @@
   "version": "0.1.0",
   "scripts": {
     "dev": "npm run dev --prefix client",
-    "start": "npm run server:start",
-    "postinstall": "npm run server:build",
+    "start": "npm run render:start",
+    "postinstall": "npm run render:build",
     "client": "npm run dev --prefix client",
     "server": "npm run dev --prefix server",
     "server:build": "npm install --prefix server",
-    "server:start": "npm start --prefix server"
+    "server:start": "npm start --prefix server",
+    "render:build": "npm run server:build",
+    "render:start": "npm run server:start"
   }
 }
