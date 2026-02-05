@@ -4,7 +4,8 @@
   "version": "0.1.0",
   "scripts": {
     "dev": "npm run dev --prefix client",
-    "start": "npm run dev",
+    "start": "npm run server:start",
+    "postinstall": "npm run server:build",
     "client": "npm run dev --prefix client",
     "server": "npm run dev --prefix server",
     "server:build": "npm install --prefix server",

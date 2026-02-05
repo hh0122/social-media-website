@@ -35,9 +35,9 @@ If you are in the repository root, run:
 npm run dev
 ```
 
-(Or `npm start`, which aliases to the same command.)
+`npm run dev` starts the Vite client (`client/`) from the root folder.
 
-This starts the Vite client (`client/`) from the root folder.
+`npm start` is configured for deployment and starts the backend API.
 
 To run the backend from root, use:
 
@@ -79,3 +79,6 @@ You can host the frontend on **Netlify** and the backend on **Render**.
   - Set backend environment variables in Render (for example: `MONGO_URI`, `JWT_SECRET`, and optional `CORS_ORIGIN`).
 
 After both are deployed, ensure the frontend points to the Render URL via `VITE_API_URL`.
+
+
+If Render is using default commands (`yarn` + `yarn start`), this repo now works out of the box: install triggers backend dependency install via `postinstall`, and `start` launches the API server.
