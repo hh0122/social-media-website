@@ -29,23 +29,27 @@ Create a `.env` file in `server/` if you want to override environment variables.
 
 ## Quick start from repo root
 
-If you are in the repository root, you can now run:
+If you are in the repository root, run:
 
 ```bash
 npm run dev
 ```
 
-(Or `npm start`, which aliases to the same command.)
+`npm run dev` starts the Vite client (`client/`) from the root folder.
 
-This starts the Vite client (`client/`) from the root folder.
+`npm start` is configured for deployment and starts the backend API.
 
-You can also run:
+To run the backend from root, use:
 
 ```bash
 npm run server
 ```
 
-to start the API server (`server/`).
+For a production-like server start from root, use:
+
+```bash
+npm run server:start
+```
 
 ## Notes
 
@@ -59,3 +63,29 @@ If you see an error like `ENOENT: no such file or directory, open ...\package.js
 - Run commands from the project root (this folder), or
 - Run `cd client` / `cd server` first, then run npm commands there.
 
+
+## Deploying frontend and backend separately
+
+You can host the frontend on **Netlify** and the backend on **Render**.
+
+- Netlify (frontend):
+  - Base directory: `client`
+  - Build command: `npm run build`
+  - Publish directory: `dist`
+  - Environment variable: `VITE_API_URL=https://<your-render-service>.onrender.com/api`
+
+- Render (backend):
+  - Prefer **Blueprint deploy** so `render.yaml` is applied automatically.
+  - If you create a Web Service manually, set:
+    - Root directory: `server`
+    - Build command: `npm install`
+    - Start command: `npm start`
+  - Set backend environment variables in Render (for example: `MONGO_URI`, `JWT_SECRET`, and optional `CORS_ORIGIN`).
+
+After both are deployed, ensure the frontend points to the Render URL via `VITE_API_URL`.
+
+
+If Render is using default commands (`yarn` + `yarn start`), this repo now works out of the box: install triggers backend dependency install via `postinstall`, and `start` launches the API server.
+
+
+If you still see `vite: Permission denied` on Render, the service is still starting the frontend script. Re-check that the service start command is backend-focused (`npm start` in `server/`, or root `yarn start` on this latest commit) and redeploy.
