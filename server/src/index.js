@@ -9,7 +9,11 @@ import userRoutes from "./routes/userRoutes.js";
 dotenv.config();
 
 const app = express();
-app.use(cors());
+const corsOrigins = process.env.CORS_ORIGIN
+  ? process.env.CORS_ORIGIN.split(",").map((origin) => origin.trim())
+  : true;
+
+app.use(cors({ origin: corsOrigins }));
 app.use(express.json());
 
 app.get("/", (_req, res) => {
