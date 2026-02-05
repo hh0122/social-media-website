@@ -1,0 +1,10 @@
+{
+  "name": "social-media-website",
+  "private": true,
+  "version": "0.1.0",
+  "scripts": {
+    "start": "npm run dev --prefix client",
+    "client": "npm run dev --prefix client",
+    "server": "npm run dev --prefix server"
+  }
+}
