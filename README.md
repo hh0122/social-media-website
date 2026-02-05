@@ -32,8 +32,10 @@ Create a `.env` file in `server/` if you want to override environment variables.
 If you are in the repository root, you can now run:
 
 ```bash
-npm start
+npm run dev
 ```
+
+(Or `npm start`, which aliases to the same command.)
 
 This starts the Vite client (`client/`) from the root folder.
 

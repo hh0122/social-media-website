@@ -3,7 +3,8 @@
   "private": true,
   "version": "0.1.0",
   "scripts": {
-    "start": "npm run dev --prefix client",
+    "dev": "npm run dev --prefix client",
+    "start": "npm run dev",
     "client": "npm run dev --prefix client",
     "server": "npm run dev --prefix server"
   }
