@@ -73,6 +73,7 @@ You can host the frontend on **Netlify** and the backend on **Render**.
   - Build command: `npm run build`
   - Publish directory: `dist`
   - Environment variable: `VITE_API_URL=https://<your-render-service>.onrender.com/api`
+  - SPA routing is enabled via `client/public/_redirects` so direct visits to routes like `/login` or `/profile` resolve to `index.html` instead of a Netlify 404.
 
 - Render (backend):
   - Prefer **Blueprint deploy** so `render.yaml` is applied automatically.
