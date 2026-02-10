@@ -72,7 +72,8 @@ You can host the frontend on **Netlify** and the backend on **Render**.
   - Base directory: `client`
   - Build command: `npm run build`
   - Publish directory: `dist`
-  - Environment variable: `VITE_API_URL=https://<your-render-service>.onrender.com/api`
+  - Environment variable: `VITE_API_URL=https://<your-render-service>.onrender.com/api` (recommended; if missing, this repo currently defaults production API calls to `https://social-media-website-udcf.onrender.com/api`).
+  - For manual deploys, set `VITE_API_URL` in `client/.env` (you can copy `client/.env.example`) before running `npm run build`, then upload `client/dist` to Netlify.
   - SPA routing is enabled via `client/public/_redirects` so direct visits to routes like `/login` or `/profile` resolve to `index.html` instead of a Netlify 404.
 
 - Render (backend):
@@ -83,7 +84,7 @@ You can host the frontend on **Netlify** and the backend on **Render**.
     - Start command: `npm start`
   - Set backend environment variables in Render (for example: `MONGO_URI`, `JWT_SECRET`, and optional `CORS_ORIGIN`).
 
-After both are deployed, ensure the frontend points to the Render URL via `VITE_API_URL`.
+After both are deployed, ensure the frontend points to the Render URL via `VITE_API_URL` (for this deployment, `https://social-media-website-udcf.onrender.com/api`).
 
 
 If Render is using default commands (`yarn` + `yarn start`), this repo now works out of the box: install triggers backend dependency install via `postinstall`, and `start` launches the API server.
