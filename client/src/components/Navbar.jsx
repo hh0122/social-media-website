@@ -1,5 +1,6 @@
 import { Link, NavLink } from "react-router-dom";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import api from "../api/axios";
 import { useAuth } from "../context/AuthContext";
 import { useTheme } from "../context/ThemeContext";
 import { travelProfiles } from "../data/travelData";
@@ -14,10 +15,11 @@ const Navbar = () => {
   const { user, logout } = useAuth();
   const { theme, toggleTheme } = useTheme();
   const [query, setQuery] = useState("");
+  const [remoteResults, setRemoteResults] = useState([]);
 
   const allUsers = useMemo(() => getAllUsers(travelProfiles, user), [user]);
 
-  const results = useMemo(() => {
+  const localResults = useMemo(() => {
     const term = query.trim().toLowerCase();
     if (!term) return [];
     return allUsers.filter(
@@ -26,6 +28,34 @@ const Navbar = () => {
         profile.handle.toLowerCase().includes(term)
     );
   }, [allUsers, query]);
+
+  useEffect(() => {
+    if (!user) {
+      setRemoteResults([]);
+      return;
+    }
+
+    const term = query.trim();
+    if (!term) {
+      setRemoteResults([]);
+      return;
+    }
+
+    const timeoutId = window.setTimeout(async () => {
+      try {
+        const response = await api.get("/users/search", {
+          params: { q: term }
+        });
+        setRemoteResults(Array.isArray(response.data) ? response.data : []);
+      } catch {
+        setRemoteResults([]);
+      }
+    }, 250);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [query, user]);
+
+  const results = user ? remoteResults : localResults;
 
   return (
     <header className="relative z-30 border-b border-slate-800/80 bg-slate-950/70 backdrop-blur">
@@ -55,17 +85,23 @@ const Navbar = () => {
               <p className="text-xs uppercase text-slate-500">Profiles</p>
               <ul className="mt-2 space-y-2">
                 {results.map((profile) => (
-                  <li key={profile.id}>
+                  <li key={profile.id ?? profile._id ?? profile.handle}>
                     <Link
                       to={`/profile/${profile.handle.replace("@", "")}`}
                       className="flex items-center gap-3 rounded-xl px-2 py-2 transition hover:bg-slate-900"
                       onClick={() => setQuery("")}
                     >
-                      <img
-                        src={profile.avatar}
-                        alt={profile.name}
-                        className="h-8 w-8 rounded-full border border-slate-800 object-cover"
-                      />
+                      {profile.avatar ? (
+                        <img
+                          src={profile.avatar}
+                          alt={profile.name}
+                          className="h-8 w-8 rounded-full border border-slate-800 object-cover"
+                        />
+                      ) : (
+                        <span className="flex h-8 w-8 items-center justify-center rounded-full border border-slate-800 bg-slate-900 text-xs font-semibold uppercase text-slate-300">
+                          {profile.name?.charAt(0) ?? "U"}
+                        </span>
+                      )}
                       <div>
                         <p className="text-sm font-semibold text-white">{profile.name}</p>
                         <p className="text-xs text-slate-500">{profile.handle}</p>
