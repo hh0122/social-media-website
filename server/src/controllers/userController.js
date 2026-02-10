@@ -14,12 +14,15 @@ export const searchUsers = async (req, res) => {
   const escapedTerm = term.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
   const regex = new RegExp(escapedTerm, "i");
 
-  const users = await User.find({
-    _id: { $ne: req.user.id },
+  const query = {
     $or: [{ name: regex }, { handle: regex }]
-  })
-    .select("-password")
-    .limit(10);
+  };
+
+  if (req.user?.id) {
+    query._id = { $ne: req.user.id };
+  }
+
+  const users = await User.find(query).select("-password").limit(10);
 
   return res.json(users);
 };

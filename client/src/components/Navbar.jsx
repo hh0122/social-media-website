@@ -30,11 +30,6 @@ const Navbar = () => {
   }, [allUsers, query]);
 
   useEffect(() => {
-    if (!user) {
-      setRemoteResults([]);
-      return;
-    }
-
     const term = query.trim();
     if (!term) {
       setRemoteResults([]);
@@ -53,9 +48,9 @@ const Navbar = () => {
     }, 250);
 
     return () => window.clearTimeout(timeoutId);
-  }, [query, user]);
+  }, [query]);
 
-  const results = user ? remoteResults : localResults;
+  const results = remoteResults.length > 0 ? remoteResults : localResults;
 
   return (
     <header className="relative z-30 border-b border-slate-800/80 bg-slate-950/70 backdrop-blur">
