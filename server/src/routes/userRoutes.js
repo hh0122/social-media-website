@@ -1,9 +1,10 @@
 import { Router } from "express";
-import { getProfile } from "../controllers/userController.js";
+import { getProfile, searchUsers } from "../controllers/userController.js";
 import auth from "../middleware/auth.js";
 
 const router = Router();
 
 router.get("/me", auth, getProfile);
+router.get("/search", searchUsers);
 
 export default router;
