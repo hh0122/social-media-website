@@ -5,6 +5,6 @@ import auth from "../middleware/auth.js";
 const router = Router();
 
 router.get("/me", auth, getProfile);
-router.get("/search", auth, searchUsers);
+router.get("/search", searchUsers);
 
 export default router;
