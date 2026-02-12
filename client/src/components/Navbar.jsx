@@ -115,6 +115,9 @@ const Navbar = () => {
           <NavLink to="/trending" className={linkClass}>
             Trending
           </NavLink>
+          <NavLink to="/planner" className={linkClass}>
+            AI Planner
+          </NavLink>
           <NavLink to="/profile" className={linkClass}>
             Profile
           </NavLink>

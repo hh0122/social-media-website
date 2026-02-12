@@ -5,6 +5,7 @@ import Login from "./pages/Login";
 import Register from "./pages/Register";
 import Profile from "./pages/Profile";
 import Trending from "./pages/Trending";
+import TravelAssistant from "./pages/TravelAssistant";
 import ProtectedRoute from "./components/ProtectedRoute";
 import { useTheme } from "./context/ThemeContext";
 
@@ -24,6 +25,7 @@ const App = () => {
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/trending" element={<Trending />} />
+          <Route path="/planner" element={<TravelAssistant />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
           <Route path="/profile/:handle" element={<Profile />} />
