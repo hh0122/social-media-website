@@ -195,7 +195,7 @@ const TravelAssistant = () => {
       <div className="glass-card flex flex-col gap-4 p-6">
         <h2 className="text-2xl font-semibold text-white">Popular Places API Finder</h2>
         <p className="text-sm text-slate-400">
-          Search attractions, food, cafes, or nightlife and open results in Google Maps.
+          Search attractions, food, cafes, or nightlife and view place photos with map links.
         </p>
 
         <div className="flex flex-col gap-3 sm:flex-row">
@@ -241,7 +241,16 @@ const TravelAssistant = () => {
         ) : (
           <ul className="space-y-3">
             {places.map((place) => (
-              <li key={place.id} className="rounded-xl border border-slate-800 bg-slate-950/30 p-4">
+              <li key={place.id} className="overflow-hidden rounded-xl border border-slate-800 bg-slate-950/30 p-4">
+                <img
+                  src={place.imageUrl}
+                  alt={place.name}
+                  className="h-40 w-full rounded-lg object-cover"
+                  loading="lazy"
+                  onError={(event) => {
+                    event.currentTarget.src = `https://picsum.photos/seed/${encodeURIComponent(place.name)}/800/480`;
+                  }}
+                />
                 <div className="flex items-center justify-between gap-3">
                   <p className="font-semibold text-white">{place.name}</p>
                   {place.rating ? <span className="text-xs text-amber-300">{place.rating}★</span> : null}

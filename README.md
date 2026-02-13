@@ -63,9 +63,9 @@ The travel planner page (`/planner`) supports two optional external providers:
 
 - `OPENAI_API_KEY` (optional): enables AI-generated itinerary responses from the backend.
 - `OPENAI_MODEL` (optional): defaults to `gpt-4o-mini`.
-- `GOOGLE_MAPS_API_KEY` (optional): enables Google Places-backed results for the popular places finder.
+- `GOOGLE_MAPS_API_KEY` (optional): enables Google Places-backed results (including ratings and place photos) for the popular places finder.
 
-If either provider key is missing, the app still works with safe fallbacks (local itinerary fallback + OpenStreetMap places search).
+If either provider key is missing, the app still works with safe fallbacks (smart itinerary fallback + OpenStreetMap/local place search).
 
 ## Troubleshooting
 
