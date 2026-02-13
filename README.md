@@ -56,6 +56,17 @@ npm run server:start
 - The client uses a mock auth context and demo data for quick UI previews.
 - The server exposes `/api/auth`, `/api/posts`, and `/api/users` endpoints.
 
+
+## Travel planner configuration
+
+The travel planner page (`/planner`) supports two optional external providers:
+
+- `OPENAI_API_KEY` (optional): enables AI-generated itinerary responses from the backend.
+- `OPENAI_MODEL` (optional): defaults to `gpt-4o-mini`.
+- `GOOGLE_MAPS_API_KEY` (optional): enables Google Places-backed results for the popular places finder.
+
+If either provider key is missing, the app still works with safe fallbacks (local itinerary fallback + OpenStreetMap places search).
+
 ## Troubleshooting
 
 If you see an error like `ENOENT: no such file or directory, open ...\package.json`, npm is being run in a folder that does not have a `package.json`. Make sure you either:

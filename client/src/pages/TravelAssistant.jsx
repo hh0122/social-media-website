@@ -3,6 +3,40 @@ import api from "../api/axios";
 
 const categories = ["attractions", "food", "cafe", "nightlife"];
 
+const createFallbackPlanMessage = ({ destination, days, preferences }) => {
+  const tripDays = Number(days) || 1;
+  const prefText = preferences?.trim() || "sightseeing and local food";
+
+  const lines = [`${tripDays}-day itinerary for ${destination}`, "", "• Keep major bookings reserved early.", "• Group visits by neighborhood to reduce transit.", "• Leave room for spontaneous discoveries.", ""];
+
+  for (let day = 1; day <= tripDays; day += 1) {
+    lines.push(
+      `Day ${day}`,
+      `Morning: Explore signature landmarks in ${destination}.`,
+      `Afternoon: Focus on ${prefText} in a walkable district.`,
+      "Evening: Choose a well-rated local restaurant and nearby dessert spot.",
+      ""
+    );
+  }
+
+  return lines.join("\n").trim();
+};
+
+const formatPlanMessage = (plan) => {
+  const lines = [plan.summary || "Your travel plan", "", ...(plan.tips ?? []).map((tip) => `• ${tip}`), ""];
+  (plan.itinerary ?? []).forEach((item) => {
+    lines.push(
+      `Day ${item.day}`,
+      `Morning: ${item.morning}`,
+      `Afternoon: ${item.afternoon}`,
+      `Evening: ${item.evening}`,
+      ""
+    );
+  });
+
+  return lines.join("\n").trim();
+};
+
 const TravelAssistant = () => {
   const [destination, setDestination] = useState("Paris");
   const [days, setDays] = useState(4);
@@ -19,55 +53,49 @@ const TravelAssistant = () => {
   const [location, setLocation] = useState("Paris");
   const [category, setCategory] = useState("attractions");
   const [places, setPlaces] = useState([]);
+  const [placesProvider, setPlacesProvider] = useState("-");
+  const [placesError, setPlacesError] = useState("");
   const [isLoadingPlaces, setIsLoadingPlaces] = useState(false);
 
-  const canPlan = destination.trim().length > 1 && Number(days) >= 1;
+  const canPlan = destination.trim().length > 1 && Number(days) >= 1 && Number(days) <= 14;
+
+  const addAssistantMessage = (text) => {
+    setMessages((prev) => [
+      ...prev,
+      {
+        id: crypto.randomUUID(),
+        role: "assistant",
+        text
+      }
+    ]);
+  };
 
   const planTrip = async () => {
     if (!canPlan || isPlanning) return;
+
     const userMessage = `I'm going to ${destination} for ${days} days. Preferences: ${preferences || "general"}.`;
-    setMessages((prev) => [
-      ...prev,
-      { id: crypto.randomUUID(), role: "user", text: userMessage }
-    ]);
+    setMessages((prev) => [...prev, { id: crypto.randomUUID(), role: "user", text: userMessage }]);
     setIsPlanning(true);
 
     try {
       const response = await api.post("/travel/plan", {
-        destination,
+        destination: destination.trim(),
         days: Number(days),
         preferences
       });
 
       const plan = response.data;
-      const lines = [plan.summary, "", ...(plan.tips ?? []).map((tip) => `• ${tip}`), ""];
-      (plan.itinerary ?? []).forEach((item) => {
-        lines.push(
-          `Day ${item.day}`,
-          `Morning: ${item.morning}`,
-          `Afternoon: ${item.afternoon}`,
-          `Evening: ${item.evening}`,
-          ""
-        );
-      });
+      if (!plan?.summary && !Array.isArray(plan?.itinerary)) {
+        throw new Error(plan?.message || "Planner service returned an invalid response.");
+      }
 
-      setMessages((prev) => [
-        ...prev,
-        {
-          id: crypto.randomUUID(),
-          role: "assistant",
-          text: lines.join("\n").trim()
-        }
-      ]);
-    } catch {
-      setMessages((prev) => [
-        ...prev,
-        {
-          id: crypto.randomUUID(),
-          role: "assistant",
-          text: "I couldn't create a plan right now. Please try again in a moment."
-        }
-      ]);
+      addAssistantMessage(formatPlanMessage(plan));
+    } catch (error) {
+      const apiMessage = error?.response?.data?.message;
+      const fallbackText = createFallbackPlanMessage({ destination, days, preferences });
+      addAssistantMessage(
+        `${apiMessage || "Live planner is temporarily unavailable."}\n\nI generated a local backup plan so you can still continue:\n\n${fallbackText}`
+      );
     } finally {
       setIsPlanning(false);
     }
@@ -76,6 +104,7 @@ const TravelAssistant = () => {
   const searchPlaces = async () => {
     if (!location.trim() || isLoadingPlaces) return;
     setIsLoadingPlaces(true);
+    setPlacesError("");
 
     try {
       const response = await api.get("/travel/places", {
@@ -85,8 +114,11 @@ const TravelAssistant = () => {
         }
       });
       setPlaces(response.data.results ?? []);
-    } catch {
+      setPlacesProvider(response.data.provider ?? "unknown");
+    } catch (error) {
       setPlaces([]);
+      setPlacesProvider("-");
+      setPlacesError(error?.response?.data?.message || "Could not load places right now.");
     } finally {
       setIsLoadingPlaces(false);
     }
@@ -94,8 +126,9 @@ const TravelAssistant = () => {
 
   const mapEmptyText = useMemo(() => {
     if (isLoadingPlaces) return "Finding popular places...";
+    if (placesError) return placesError;
     return "Search a city to get map-ready popular places.";
-  }, [isLoadingPlaces]);
+  }, [isLoadingPlaces, placesError]);
 
   return (
     <section className="grid gap-6 lg:grid-cols-2">
@@ -147,7 +180,7 @@ const TravelAssistant = () => {
           {messages.map((message) => (
             <div
               key={message.id}
-              className={`rounded-2xl px-4 py-3 text-sm whitespace-pre-line ${
+              className={`whitespace-pre-line rounded-2xl px-4 py-3 text-sm ${
                 message.role === "user"
                   ? "ml-6 bg-brand-600/20 text-brand-100"
                   : "mr-6 bg-slate-900 text-slate-100"
@@ -162,7 +195,7 @@ const TravelAssistant = () => {
       <div className="glass-card flex flex-col gap-4 p-6">
         <h2 className="text-2xl font-semibold text-white">Popular Places API Finder</h2>
         <p className="text-sm text-slate-400">
-          Search any location and open results in Google Maps or OpenStreetMap.
+          Search attractions, food, cafes, or nightlife and open results in Google Maps.
         </p>
 
         <div className="flex flex-col gap-3 sm:flex-row">
@@ -181,21 +214,24 @@ const TravelAssistant = () => {
           </button>
         </div>
 
-        <div className="flex flex-wrap gap-2">
-          {categories.map((value) => (
-            <button
-              key={value}
-              type="button"
-              onClick={() => setCategory(value)}
-              className={`rounded-full px-3 py-1 text-xs font-semibold capitalize ${
-                category === value
-                  ? "bg-brand-600 text-white"
-                  : "border border-slate-700 text-slate-300"
-              }`}
-            >
-              {value}
-            </button>
-          ))}
+        <div className="flex items-center justify-between">
+          <div className="flex flex-wrap gap-2">
+            {categories.map((value) => (
+              <button
+                key={value}
+                type="button"
+                onClick={() => setCategory(value)}
+                className={`rounded-full px-3 py-1 text-xs font-semibold capitalize ${
+                  category === value
+                    ? "bg-brand-600 text-white"
+                    : "border border-slate-700 text-slate-300"
+                }`}
+              >
+                {value}
+              </button>
+            ))}
+          </div>
+          <span className="text-xs uppercase text-slate-500">Source: {placesProvider}</span>
         </div>
 
         {places.length === 0 ? (
@@ -206,7 +242,10 @@ const TravelAssistant = () => {
           <ul className="space-y-3">
             {places.map((place) => (
               <li key={place.id} className="rounded-xl border border-slate-800 bg-slate-950/30 p-4">
-                <p className="font-semibold text-white">{place.name}</p>
+                <div className="flex items-center justify-between gap-3">
+                  <p className="font-semibold text-white">{place.name}</p>
+                  {place.rating ? <span className="text-xs text-amber-300">{place.rating}★</span> : null}
+                </div>
                 <p className="mt-1 text-xs text-slate-400">{place.fullAddress}</p>
                 <div className="mt-3 flex gap-2 text-xs">
                   <a
@@ -217,14 +256,16 @@ const TravelAssistant = () => {
                   >
                     Open in Google Maps
                   </a>
-                  <a
-                    href={place.openStreetMapUrl}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="rounded-full border border-slate-700 px-3 py-1 font-semibold text-slate-200"
-                  >
-                    Open in OSM
-                  </a>
+                  {place.openStreetMapUrl ? (
+                    <a
+                      href={place.openStreetMapUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="rounded-full border border-slate-700 px-3 py-1 font-semibold text-slate-200"
+                    >
+                      Open in OSM
+                    </a>
+                  ) : null}
                 </div>
               </li>
             ))}

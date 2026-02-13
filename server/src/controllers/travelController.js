@@ -1,68 +1,182 @@
 const SYSTEM_PROMPT =
-  "You are a concise travel planner. Return practical day-by-day plans with food tips and neighborhoods.";
+  "You are an expert travel planner. Return practical day-by-day plans with attraction timing, neighborhood advice, and food suggestions.";
+
+const categoryQueryMap = {
+  attractions: "top attractions",
+  food: "popular restaurants",
+  cafe: "best cafes",
+  nightlife: "best nightlife spots"
+};
 
 const fallbackAttractions = [
-  "Visit the historic city center and landmark museums",
-  "Take a walking tour through the most popular neighborhoods",
-  "Book a sunset viewpoint or river cruise",
-  "Leave time for a local market and cultural performance"
+  "visit iconic landmarks and one major museum",
+  "explore a local neighborhood with walking-friendly streets",
+  "book a panoramic viewpoint or river experience",
+  "mix one cultural site with one relaxing park stop"
 ];
 
 const fallbackFood = [
-  "Start with a famous local bakery in the morning",
-  "Try a highly rated neighborhood bistro for lunch",
-  "Reserve one signature dinner experience",
-  "End one evening with street food or late-night desserts"
+  "start with a popular local bakery",
+  "book a well-reviewed bistro for lunch",
+  "reserve one signature dinner with local specialties",
+  "finish an evening with dessert or street food"
 ];
 
+const toGoogleMapsUrl = (latitude, longitude) =>
+  `https://www.google.com/maps/search/?api=1&query=${latitude},${longitude}`;
+
+const toOpenStreetMapUrl = (latitude, longitude) =>
+  `https://www.openstreetmap.org/?mlat=${latitude}&mlon=${longitude}#map=15/${latitude}/${longitude}`;
+
+
+const buildLocalPlacesFallback = ({ location, category }) => {
+  const query = `${location} ${categoryQueryMap[category] ?? category}`;
+  return Array.from({ length: 6 }, (_, index) => {
+    const label = `${location} ${category} spot ${index + 1}`;
+    const googleMapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${query} ${index + 1}`)}`;
+
+    return {
+      id: `${location}-${category}-${index + 1}`,
+      name: label,
+      fullAddress: `Search result suggestion for ${location}`,
+      latitude: null,
+      longitude: null,
+      rating: null,
+      provider: "local-fallback",
+      googleMapsUrl,
+      openStreetMapUrl: null
+    };
+  });
+};
+
 const buildFallbackPlan = ({ destination, days, preferences }) => {
+  const interest = preferences || "culture, food, and local experiences";
+
   const itinerary = Array.from({ length: days }, (_, index) => ({
     day: index + 1,
-    morning: `Explore ${destination} highlights and ${fallbackAttractions[index % fallbackAttractions.length].toLowerCase()}.`,
-    afternoon: `Focus on ${preferences || "local culture"} and relax in a walkable district.`,
-    evening: `Dinner suggestion: ${fallbackFood[index % fallbackFood.length]}.`
+    morning: `In ${destination}, ${fallbackAttractions[index % fallbackAttractions.length]}.`,
+    afternoon: `Prioritize ${interest} and keep this block flexible for weather or queues.`,
+    evening: `Food idea: ${fallbackFood[index % fallbackFood.length]}.`
   }));
 
   return {
     source: "fallback",
     summary: `${days}-day itinerary for ${destination}`,
     tips: [
-      "Use public transport passes for cheaper daily movement.",
-      "Book major attractions 1-2 weeks early.",
-      "Save offline maps before leaving your hotel."
+      "Pre-book major attractions and dinner slots where possible.",
+      "Group places by neighborhood to reduce transit time.",
+      "Keep one flexible slot each day for spontaneous stops."
     ],
     itinerary
   };
 };
 
+const sanitizePlan = (plan, fallbackPlan) => {
+  if (!plan || typeof plan !== "object") return fallbackPlan;
+
+  const itinerary = Array.isArray(plan.itinerary)
+    ? plan.itinerary
+        .map((item, index) => ({
+          day: Number(item?.day) || index + 1,
+          morning: String(item?.morning || "Explore key attractions in the city center."),
+          afternoon: String(item?.afternoon || "Visit local neighborhoods and food streets."),
+          evening: String(item?.evening || "Try a popular dinner spot and nearby nightlife.")
+        }))
+        .slice(0, fallbackPlan.itinerary.length)
+    : fallbackPlan.itinerary;
+
+  return {
+    source: "openai",
+    summary: String(plan.summary || fallbackPlan.summary),
+    tips: Array.isArray(plan.tips) && plan.tips.length > 0
+      ? plan.tips.map((tip) => String(tip))
+      : fallbackPlan.tips,
+    itinerary: itinerary.length > 0 ? itinerary : fallbackPlan.itinerary
+  };
+};
+
 const normalizeNominatimResponse = (items = []) =>
-  items.slice(0, 8).map((item) => {
+  items.slice(0, 12).map((item) => {
     const latitude = Number(item.lat);
     const longitude = Number(item.lon);
 
     return {
-      id: item.place_id,
+      id: String(item.place_id),
       name: item.display_name?.split(",")?.[0] ?? "Unknown place",
       fullAddress: item.display_name,
       latitude,
       longitude,
-      openStreetMapUrl: `https://www.openstreetmap.org/?mlat=${latitude}&mlon=${longitude}#map=15/${latitude}/${longitude}`,
-      googleMapsUrl: `https://www.google.com/maps/search/?api=1&query=${latitude},${longitude}`
+      rating: null,
+      provider: "openstreetmap",
+      openStreetMapUrl: toOpenStreetMapUrl(latitude, longitude),
+      googleMapsUrl: toGoogleMapsUrl(latitude, longitude)
     };
   });
+
+const searchGooglePlaces = async ({ location, category }) => {
+  const apiKey = process.env.GOOGLE_MAPS_API_KEY;
+  if (!apiKey) {
+    return null;
+  }
+
+  const query = `${location} ${categoryQueryMap[category] ?? category}`;
+
+  const response = await fetch("https://places.googleapis.com/v1/places:searchText", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "X-Goog-Api-Key": apiKey,
+      "X-Goog-FieldMask":
+        "places.id,places.displayName,places.formattedAddress,places.location,places.rating,places.googleMapsUri"
+    },
+    body: JSON.stringify({
+      textQuery: query,
+      languageCode: "en",
+      maxResultCount: 12
+    })
+  });
+
+  if (!response.ok) {
+    const message = await response.text();
+    throw new Error(`Google Places failed: ${response.status} ${message}`);
+  }
+
+  const data = await response.json();
+  const items = Array.isArray(data.places) ? data.places : [];
+
+  return items.map((item) => {
+    const latitude = Number(item.location?.latitude);
+    const longitude = Number(item.location?.longitude);
+
+    return {
+      id: String(item.id),
+      name: item.displayName?.text ?? "Unknown place",
+      fullAddress: item.formattedAddress ?? "",
+      latitude,
+      longitude,
+      rating: Number.isFinite(item.rating) ? item.rating : null,
+      provider: "google",
+      googleMapsUrl: item.googleMapsUri || toGoogleMapsUrl(latitude, longitude),
+      openStreetMapUrl: Number.isFinite(latitude) && Number.isFinite(longitude)
+        ? toOpenStreetMapUrl(latitude, longitude)
+        : null
+    };
+  });
+};
 
 export const generateTravelPlan = async (req, res) => {
   const { destination, days, preferences } = req.body ?? {};
   const parsedDays = Number(days);
 
-  if (!destination || !Number.isFinite(parsedDays) || parsedDays < 1 || parsedDays > 14) {
+  if (!destination?.trim() || !Number.isFinite(parsedDays) || parsedDays < 1 || parsedDays > 14) {
     return res.status(400).json({
       message: "Please provide destination and days between 1 and 14."
     });
   }
 
+  const trimmedDestination = destination.trim();
   const fallbackPlan = buildFallbackPlan({
-    destination: destination.trim(),
+    destination: trimmedDestination,
     days: parsedDays,
     preferences: preferences?.trim()
   });
@@ -80,12 +194,14 @@ export const generateTravelPlan = async (req, res) => {
       },
       body: JSON.stringify({
         model: process.env.OPENAI_MODEL || "gpt-4o-mini",
-        temperature: 0.7,
+        temperature: 0.6,
         messages: [
           { role: "system", content: SYSTEM_PROMPT },
           {
             role: "user",
-            content: `Create a ${parsedDays}-day trip for ${destination}. Preferences: ${preferences || "general sightseeing + food"}. Return JSON with keys summary, tips(string[]), itinerary({day,morning,afternoon,evening}[]).`
+            content:
+              `Create a ${parsedDays}-day trip for ${trimmedDestination}. Preferences: ${preferences || "general sightseeing + food"}. ` +
+              "Return JSON with keys summary (string), tips (string[]), itinerary ({day,morning,afternoon,evening}[])."
           }
         ],
         response_format: { type: "json_object" }
@@ -93,20 +209,18 @@ export const generateTravelPlan = async (req, res) => {
     });
 
     if (!response.ok) {
-      return res.json(fallbackPlan);
+      return res.json({ ...fallbackPlan, source: "fallback" });
     }
 
     const data = await response.json();
     const content = data?.choices?.[0]?.message?.content;
+
     if (!content) {
       return res.json(fallbackPlan);
     }
 
     const parsed = JSON.parse(content);
-    return res.json({
-      source: "openai",
-      ...parsed
-    });
+    return res.json(sanitizePlan(parsed, fallbackPlan));
   } catch {
     return res.json(fallbackPlan);
   }
@@ -120,16 +234,19 @@ export const searchPopularPlaces = async (req, res) => {
     return res.status(400).json({ message: "location query is required." });
   }
 
-  const categoryQueryMap = {
-    attractions: "top attractions",
-    food: "popular restaurants",
-    cafe: "best cafes",
-    nightlife: "nightlife"
-  };
-
-  const query = `${location} ${categoryQueryMap[category] ?? category}`;
-
   try {
+    const googleResults = await searchGooglePlaces({ location, category });
+
+    if (googleResults && googleResults.length > 0) {
+      return res.json({
+        location,
+        category,
+        provider: "google",
+        results: googleResults
+      });
+    }
+
+    const query = `${location} ${categoryQueryMap[category] ?? category}`;
     const endpoint = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=12`;
     const response = await fetch(endpoint, {
       headers: {
@@ -138,7 +255,12 @@ export const searchPopularPlaces = async (req, res) => {
     });
 
     if (!response.ok) {
-      return res.status(502).json({ message: "Failed to fetch places." });
+      return res.json({
+        location,
+        category,
+        provider: "local-fallback",
+        results: buildLocalPlacesFallback({ location, category })
+      });
     }
 
     const data = await response.json();
@@ -146,9 +268,15 @@ export const searchPopularPlaces = async (req, res) => {
     return res.json({
       location,
       category,
+      provider: "openstreetmap",
       results: normalizeNominatimResponse(data)
     });
   } catch {
-    return res.status(500).json({ message: "Unable to fetch places right now." });
+    return res.json({
+      location,
+      category,
+      provider: "local-fallback",
+      results: buildLocalPlacesFallback({ location, category })
+    });
   }
 };
